@@ -107,10 +107,37 @@ async function obtenerResumen(req, res) {
   });
 }
 
+
+async function obtenerReporteRegistros(req, res) {
+  const q = typeof req.query.q === "string" ? req.query.q : "";
+  const estado = typeof req.query.estado === "string" ? req.query.estado : "";
+
+  logger.debug("Cargando reporte de registros de polla", {
+    requestId: req.requestId,
+    q,
+    estado,
+  });
+
+  const reporte = await pollaService.obtenerReporteRegistros({ q, estado });
+
+  return success(res, {
+    message: "Reporte de registros cargado correctamente.",
+    data: reporte,
+    meta: {
+      totalRegistros: reporte.resumen.totalRegistros,
+      confirmados: reporte.resumen.confirmados,
+      borradores: reporte.resumen.borradores,
+      anulados: reporte.resumen.anulados,
+    },
+  });
+}
+
+
 module.exports = {
   obtenerCatalogo,
   registrarPronostico,
   consultarPronosticoPorDni,
   obtenerRanking,
   obtenerResumen,
+  obtenerReporteRegistros,
 };

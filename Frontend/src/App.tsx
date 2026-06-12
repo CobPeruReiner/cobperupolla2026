@@ -20,6 +20,7 @@ import {
 } from "./services/pollaApi";
 import type { Evento, Grupo, Pais, ParticipanteForm } from "./types/polla";
 import { formatDateLabel, getTodayLabel, normalizeDni } from "./utils/format";
+import { ReporteRegistrosView } from "./components/ReporteRegistrosView";
 import "./index.css";
 
 const EMPTY_PARTICIPANTE: ParticipanteForm = {
@@ -42,6 +43,12 @@ interface FormErrors {
   grupos?: string;
 }
 
+type VistaActiva = "formulario" | "reporte";
+
+function getInitialVista(): VistaActiva {
+  return window.location.hash === "#/reporte" ? "reporte" : "formulario";
+}
+
 export const App = () => {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -56,9 +63,17 @@ export const App = () => {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [vistaActiva, setVistaActiva] = useState<VistaActiva>(getInitialVista);
 
   useEffect(() => {
     cargarCatalogo();
+  }, []);
+
+  useEffect(() => {
+    const handleHashChange = () => setVistaActiva(getInitialVista());
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   useEffect(() => {
@@ -82,6 +97,11 @@ export const App = () => {
   );
   const isComplete = grupos.length > 0 && incompleteGroups.length === 0;
   const registroAbierto = evento?.registroAbierto !== false;
+
+  function cambiarVista(vista: VistaActiva) {
+    window.location.hash = vista === "reporte" ? "/reporte" : "/";
+    setVistaActiva(vista);
+  }
 
   async function cargarCatalogo() {
     try {
@@ -307,6 +327,10 @@ export const App = () => {
   //   );
   // }
 
+  if (vistaActiva === "reporte") {
+    return <ReporteRegistrosView onBack={() => cambiarVista("formulario")} />;
+  }
+
   if (successMessage) {
     return (
       <main className="min-h-screen bg-[#f4f4f4] text-neutral-950">
@@ -341,6 +365,14 @@ export const App = () => {
                 DNI {participante.dni} · {participante.cargo}
               </p>
             </div>
+            <button
+              className="btn-secondary mx-auto"
+              type="button"
+              onClick={() => cambiarVista("reporte")}
+            >
+              <ClipboardList size={18} />
+              Ver reporte de registros
+            </button>
             {/* <button
               className="btn-primary mx-auto hidden"
               type="button"
@@ -366,6 +398,17 @@ export const App = () => {
       />
 
       <section className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
+        {/* <div className="mb-4 flex justify-end">
+          <button
+            className="btn-secondary"
+            type="button"
+            onClick={() => cambiarVista("reporte")}
+          >
+            <ClipboardList size={18} />
+            Reporte de registros
+          </button>
+        </div> */}
+
         <ParticipantSection
           participante={participante}
           errors={errors}

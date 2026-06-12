@@ -748,10 +748,206 @@ async function obtenerResumen() {
   };
 }
 
+
+async function obtenerReporteRegistros({ q = "", estado = "" } = {}) {
+  const evento = await obtenerEventoActivo();
+
+  if (!evento) {
+    return {
+      evento: null,
+      resumen: {
+        totalRegistros: 0,
+        confirmados: 0,
+        borradores: 0,
+        anulados: 0,
+        totalSelecciones: 0,
+      },
+      registros: [],
+      filtros: {
+        q,
+        estado,
+      },
+    };
+  }
+
+  const filtros = ["pr.id_evento = :idEvento"];
+  const replacements = {
+    idEvento: evento.id_evento,
+  };
+
+  const estadoNormalizado = String(estado || "").trim().toUpperCase();
+  if (["BORRADOR", "CONFIRMADO", "ANULADO"].includes(estadoNormalizado)) {
+    filtros.push("pr.estado = :estado");
+    replacements.estado = estadoNormalizado;
+  }
+
+  const busqueda = String(q || "").trim();
+  if (busqueda) {
+    filtros.push(`(
+      pa.nombre_completo LIKE :busqueda
+      OR pa.dni LIKE :busqueda
+      OR pa.cargo LIKE :busqueda
+    )`);
+    replacements.busqueda = `%${busqueda}%`;
+  }
+
+  const whereSql = filtros.join(" AND ");
+
+  const rows = await sequelize.query(
+    `
+    SELECT
+      pr.id_pronostico,
+      pr.estado,
+      pr.fecha_registro,
+      pr.fecha_confirmacion,
+      pr.fecha_actualizacion,
+      pa.id_participante,
+      pa.nombre_completo,
+      pa.dni,
+      pa.cargo,
+      g.letra,
+      g.nombre AS grupo_nombre,
+      g.orden AS grupo_orden,
+      gp.id_grupo_pais,
+      gp.posicion AS pais_posicion,
+      gp.clasificado_real,
+      p.id_pais,
+      p.nombre AS pais_nombre,
+      p.codigo_iso
+    FROM polla_pronostico pr
+    INNER JOIN polla_participante pa
+      ON pa.id_participante = pr.id_participante
+    LEFT JOIN polla_pronostico_detalle d
+      ON d.id_pronostico = pr.id_pronostico
+    LEFT JOIN polla_grupo_pais gp
+      ON gp.id_grupo_pais = d.id_grupo_pais
+    LEFT JOIN polla_grupo g
+      ON g.id_grupo = gp.id_grupo
+    LEFT JOIN polla_pais p
+      ON p.id_pais = gp.id_pais
+    WHERE ${whereSql}
+    ORDER BY
+      COALESCE(pr.fecha_confirmacion, pr.fecha_registro) DESC,
+      pr.id_pronostico DESC,
+      g.orden ASC,
+      gp.posicion ASC
+    `,
+    {
+      type: QueryTypes.SELECT,
+      replacements,
+    },
+  );
+
+  const registrosMap = new Map();
+
+  for (const row of rows) {
+    if (!registrosMap.has(row.id_pronostico)) {
+      registrosMap.set(row.id_pronostico, {
+        idPronostico: row.id_pronostico,
+        estado: row.estado,
+        fechaRegistro: row.fecha_registro,
+        fechaConfirmacion: row.fecha_confirmacion,
+        fechaActualizacion: row.fecha_actualizacion,
+        participante: {
+          idParticipante: row.id_participante,
+          nombreCompleto: row.nombre_completo,
+          dni: row.dni,
+          cargo: row.cargo,
+        },
+        totalSelecciones: 0,
+        puntaje: 0,
+        gruposMap: new Map(),
+      });
+    }
+
+    const registro = registrosMap.get(row.id_pronostico);
+
+    if (!row.id_grupo_pais || !row.letra) continue;
+
+    registro.totalSelecciones += 1;
+    if (Number(row.clasificado_real) === 1) {
+      registro.puntaje += 1;
+    }
+
+    if (!registro.gruposMap.has(row.letra)) {
+      registro.gruposMap.set(row.letra, {
+        grupo: row.letra,
+        nombre: row.grupo_nombre,
+        orden: row.grupo_orden,
+        paises: [],
+      });
+    }
+
+    registro.gruposMap.get(row.letra).paises.push({
+      idGrupoPais: row.id_grupo_pais,
+      idPais: row.id_pais,
+      nombre: row.pais_nombre,
+      codigoIso: row.codigo_iso,
+      clasificadoReal: Number(row.clasificado_real) === 1,
+    });
+  }
+
+  const registros = Array.from(registrosMap.values()).map((registro) => {
+    const grupos = Array.from(registro.gruposMap.values()).sort(
+      (a, b) => Number(a.orden || 0) - Number(b.orden || 0),
+    );
+
+    return {
+      idPronostico: registro.idPronostico,
+      estado: registro.estado,
+      fechaRegistro: registro.fechaRegistro,
+      fechaConfirmacion: registro.fechaConfirmacion,
+      fechaActualizacion: registro.fechaActualizacion,
+      participante: registro.participante,
+      totalSelecciones: registro.totalSelecciones,
+      puntaje: registro.puntaje,
+      grupos,
+    };
+  });
+
+  const resumen = registros.reduce(
+    (acc, registro) => {
+      acc.totalRegistros += 1;
+      acc.totalSelecciones += registro.totalSelecciones;
+
+      if (registro.estado === "CONFIRMADO") acc.confirmados += 1;
+      if (registro.estado === "BORRADOR") acc.borradores += 1;
+      if (registro.estado === "ANULADO") acc.anulados += 1;
+
+      return acc;
+    },
+    {
+      totalRegistros: 0,
+      confirmados: 0,
+      borradores: 0,
+      anulados: 0,
+      totalSelecciones: 0,
+    },
+  );
+
+  return {
+    evento: {
+      idEvento: evento.id_evento,
+      nombre: evento.nombre,
+      fechaLimite: evento.fecha_limite,
+      fechaServidor: evento.fecha_servidor,
+      registroAbierto: Boolean(evento.registro_abierto),
+    },
+    resumen,
+    registros,
+    filtros: {
+      q: busqueda,
+      estado: estadoNormalizado || "TODOS",
+    },
+  };
+}
+
+
 module.exports = {
   obtenerCatalogo,
   registrarPronostico,
   consultarPronosticoPorDni,
   obtenerRanking,
   obtenerResumen,
+  obtenerReporteRegistros,
 };

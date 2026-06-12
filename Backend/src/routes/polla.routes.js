@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/catalogo", asyncHandler(pollaController.obtenerCatalogo));
 router.get("/resumen", asyncHandler(pollaController.obtenerResumen));
 router.get("/ranking", asyncHandler(pollaController.obtenerRanking));
+router.get("/reporte-registros", asyncHandler(pollaController.obtenerReporteRegistros));
 router.get("/pronostico/:dni", asyncHandler(pollaController.consultarPronosticoPorDni));
 router.post("/pronostico", asyncHandler(pollaController.registrarPronostico));
 

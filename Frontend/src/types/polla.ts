@@ -76,3 +76,52 @@ export interface PronosticoDniResponse {
   pronostico: unknown | null;
   selecciones: unknown[];
 }
+
+
+export interface ReportePais {
+  idGrupoPais: number;
+  idPais?: number | null;
+  nombre: string;
+  codigoIso?: string | null;
+  clasificadoReal: boolean;
+}
+
+export interface ReporteGrupo {
+  grupo: string;
+  nombre: string;
+  orden?: number | null;
+  paises: ReportePais[];
+}
+
+export interface ReporteRegistro {
+  idPronostico: number;
+  estado: "BORRADOR" | "CONFIRMADO" | "ANULADO" | string;
+  fechaRegistro?: string | null;
+  fechaConfirmacion?: string | null;
+  fechaActualizacion?: string | null;
+  participante: {
+    idParticipante: number;
+    nombreCompleto: string;
+    dni: string;
+    cargo: string;
+  };
+  totalSelecciones: number;
+  puntaje: number;
+  grupos: ReporteGrupo[];
+}
+
+export interface ReporteRegistrosData {
+  evento: Evento | null;
+  resumen: {
+    totalRegistros: number;
+    confirmados: number;
+    borradores: number;
+    anulados: number;
+    totalSelecciones: number;
+  };
+  registros: ReporteRegistro[];
+  filtros?: {
+    q?: string;
+    estado?: string;
+  };
+}

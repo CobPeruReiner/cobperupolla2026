@@ -39,3 +39,22 @@ export function getInitials(fullName: string): string {
 export function normalizeDni(value: string): string {
   return value.replace(/\D/g, "").slice(0, 15);
 }
+
+
+export function formatDateTimeLabel(value?: string | null): string {
+  if (!value) return "No definido";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No definido";
+
+  return new Intl.DateTimeFormat("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+    .format(date)
+    .replace(".", "")
+    .toUpperCase();
+}

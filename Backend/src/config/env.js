@@ -2,8 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
-const envFile =
-  process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env";
 const envPath = path.resolve(process.cwd(), envFile);
 
 if (fs.existsSync(envPath)) {
@@ -24,9 +23,9 @@ if (missingEnv.length > 0) {
 module.exports = {
   envFile,
   envPath,
-  port: Number(process.env.PORT),
-  nodeEnv: process.env.NODE_ENV,
-  frontendUrl: process.env.FRONTEND_URL,
+  port: Number(process.env.PORT || 4002),
+  nodeEnv: process.env.NODE_ENV || "development",
+  frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173",
   frontendBuildPath: process.env.FRONTEND_BUILD_PATH
     ? path.resolve(process.env.FRONTEND_BUILD_PATH)
     : path.resolve(process.cwd(), "build"),

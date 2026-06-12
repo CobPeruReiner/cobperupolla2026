@@ -5,6 +5,7 @@ import type {
   Evento,
   PronosticoDniResponse,
   RegistrarPronosticoPayload,
+  ReporteRegistrosData,
 } from "../types/polla";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -59,4 +60,25 @@ export async function registrarPronostico(payload: RegistrarPronosticoPayload): 
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+
+export async function obtenerReporteRegistros(params?: {
+  q?: string;
+  estado?: string;
+}): Promise<ApiResponse<ReporteRegistrosData>> {
+  const searchParams = new URLSearchParams();
+
+  if (params?.q?.trim()) {
+    searchParams.set("q", params.q.trim());
+  }
+
+  if (params?.estado && params.estado !== "TODOS") {
+    searchParams.set("estado", params.estado);
+  }
+
+  const queryString = searchParams.toString();
+  return requestJson<ApiResponse<ReporteRegistrosData>>(
+    `/polla/reporte-registros${queryString ? `?${queryString}` : ""}`,
+  );
 }
