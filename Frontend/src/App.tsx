@@ -291,21 +291,21 @@ export const App = () => {
     return grupo.paises.filter((pais) => ids.includes(pais.idGrupoPais));
   }
 
-  function resetForm() {
-    setParticipante(EMPTY_PARTICIPANTE);
-    setSelecciones(
-      grupos.reduce<Record<string, number[]>>((acc, grupo) => {
-        acc[grupo.letra] = [];
-        return acc;
-      }, {}),
-    );
-    setSuccessMessage(null);
-    setErrors({});
-    showToast(
-      "info",
-      "Formulario limpio. Puedes registrar un nuevo pronóstico.",
-    );
-  }
+  // function resetForm() {
+  //   setParticipante(EMPTY_PARTICIPANTE);
+  //   setSelecciones(
+  //     grupos.reduce<Record<string, number[]>>((acc, grupo) => {
+  //       acc[grupo.letra] = [];
+  //       return acc;
+  //     }, {}),
+  //   );
+  //   setSuccessMessage(null);
+  //   setErrors({});
+  //   showToast(
+  //     "info",
+  //     "Formulario limpio. Puedes registrar un nuevo pronóstico.",
+  //   );
+  // }
 
   if (successMessage) {
     return (
