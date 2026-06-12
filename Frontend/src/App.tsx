@@ -8,9 +8,9 @@ import {
   LoaderCircle,
   RefreshCw,
   Send,
-  ShieldCheck,
+  // ShieldCheck,
   Trophy,
-  UserRound,
+  // UserRound,
   X,
 } from "lucide-react";
 import {
@@ -582,7 +582,6 @@ function ParticipantSection({
       <div className="grid gap-4 md:grid-cols-3">
         <Field label="Nombre completo" required error={errors.nombreCompleto}>
           <div className="input-shell">
-            <UserRound className="input-icon" size={18} />
             <input
               className="form-input input-with-icon"
               value={participante.nombreCompleto}
@@ -597,7 +596,6 @@ function ParticipantSection({
 
         <Field label="DNI" required error={errors.dni}>
           <div className="input-shell">
-            <ShieldCheck className="input-icon" size={18} />
             <input
               className="form-input input-with-icon input-with-action"
               value={participante.dni}
@@ -618,7 +616,6 @@ function ParticipantSection({
 
         <Field label="Cargo" required error={errors.cargo}>
           <div className="input-shell">
-            <ClipboardList className="input-icon" size={18} />
             <input
               className="form-input input-with-icon"
               value={participante.cargo}
