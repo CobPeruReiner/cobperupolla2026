@@ -341,14 +341,14 @@ export const App = () => {
                 DNI {participante.dni} · {participante.cargo}
               </p>
             </div>
-            <button
+            {/* <button
               className="btn-primary mx-auto hidden"
               type="button"
               onClick={resetForm}
             >
               <RefreshCw size={18} />
               Registrar otro participante
-            </button>
+            </button> */}
           </div>
         </section>
         <Toast toast={toast} onClose={() => setToast(null)} />
