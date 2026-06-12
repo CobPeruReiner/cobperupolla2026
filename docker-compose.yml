@@ -1,0 +1,63 @@
+name: polla-cobperu
+
+services:
+  frontend:
+    image: cobperureiner/polla-cobperu-frontend:latest
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: polla-cobperu-frontend-build
+    command: >
+      sh -c "rm -rf /frontend-build/*
+      && cp -a /app/build/. /frontend-build/
+      && echo 'Frontend COBPERU construido y copiado al volumen compartido'"
+    volumes:
+      - frontend-build:/frontend-build
+    networks:
+      - polla_net
+    restart: "no"
+
+  backend:
+    image: cobperureiner/polla-cobperu-backend:latest
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: polla-cobperu-backend
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 4002
+      FRONTEND_BUILD_PATH: /app/build
+      FRONTEND_URL: http://192.168.1.67:4002
+    volumes:
+      - frontend-build:/app/build:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+    ports:
+      - "4002:4002"
+    networks:
+      - polla_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://127.0.0.1:4002/api/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  frontend-build:
+    name: polla_cobperu_frontend_build
+
+networks:
+  polla_net:
+    name: polla_cobperu_net
+    driver: bridge
